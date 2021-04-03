@@ -1,5 +1,6 @@
 #include "maincontroler.h"
 #include <nlohmann/json.hpp>
+#include <nlohmann/fifo_map.hpp>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -17,19 +18,51 @@
 #include <QDir>
 #include <QThread>
 
+#include "mainwindow.h"
+#include "addrecipewindow.h"
+
+#include <QApplication>
+
 #include "recipe.h"
 using namespace std;
 
 mainControler::mainControler()
 {
-    readJson();
+
+
     // updateJson2();
-    updateJson();
+    //updateJson();
 
 
 }
+
+
 mainControler::~mainControler(){
     delete this;
+}
+mainControler* mainControler::instance = 0;
+
+mainControler* mainControler::getInstance(){
+
+    if (instance==0) {
+        instance= new mainControler();
+    }
+
+
+return instance;
+
+
+}
+
+void  mainControler::addNewRecipe(){ //DEPRECATED
+// Recipe* newRecipe = new Recipe();
+// newRecipe->setName("hola");
+// newRecipe->setDescription({"asdas","sds"});
+// this->recipes.push_back(newRecipe);
+// updateJson();
+
+
+
 }
 void mainControler::updateJson(){
 
@@ -45,17 +78,15 @@ void mainControler::updateJson(){
 
     // Add a value using QJsonArray and write to the file
     QJsonArray jsonArray;
+    QJsonObject jsonRecipe;
+
+
+    cout << "TOTAL NUMBER OF RECIPES TO WRITTE:  "<<recipes.size()<<endl;
+
     for( unsigned int a = 0; a < recipes.size(); a = a + 1 )
     {
-
-
-
-        QJsonObject jsonRecipe;
-
         Recipe* recipeaux= recipes[a];
         vector<Ingredient*> ingredients= recipeaux->getRecIngredients();
-
-
 
         string recName= recipeaux->getRecName();
         QJsonArray jsonArrayDesc;
@@ -68,40 +99,35 @@ void mainControler::updateJson(){
         //TODO CAMBIAR NOMBRE VARIABLES
         //TODO quitar 0 de las unidades
         //TODO quitar orden alfabético
-        //intentar quitar primeros corchetes
         //probar si se lee e escribe a vez ben
 
-        QString str3 = QString::fromUtf8(recName.c_str());
-        QJsonArray jsonIngredients;
+        QString qStringRecName = QString::fromUtf8(recName.c_str());
         QJsonObject jsonIngredient;
-        jsonIngredient.insert("recipe", jsonArrayDesc);
+        jsonIngredient.insert(" recipe", jsonArrayDesc);
 
 
-        for( unsigned int b = 0; b < ingredients.size(); b = b + 1 )
-        {
+            for( unsigned int b = 0; b < ingredients.size(); b = b + 1 )
+            {
 
-            string quantityUnits= ""+ to_string(ingredients[b]->getIngQuantity())+" "+ingredients[b]->getIngUnits();
+                string quantityUnits= ""+ to_string(ingredients[b]->getIngQuantity())+" "+ingredients[b]->getIngUnits();
+                QString qStringIngUnits = QString::fromUtf8(quantityUnits.c_str());
+                QString qStringIngName = QString::fromUtf8(ingredients[b]->getIngName().c_str());
 
-            QString str2 = QString::fromUtf8(quantityUnits.c_str());
-            QString str = QString::fromUtf8(ingredients[b]->getIngName().c_str());
-            jsonIngredient.insert(str, str2);
-    // good? 1 seg? 0.5?
-            QThread::sleep(1);
+                jsonIngredient.insert(qStringIngName, qStringIngUnits);
+                QThread::sleep(1);
 
-        }
+            }
 
-        jsonIngredients.append(jsonIngredient);
-        jsonRecipe.insert(str3,jsonIngredients);
-        jsonArray.append(jsonRecipe);
-
-
+        jsonRecipe.insert(qStringRecName,jsonIngredient);
 
     }
 
 
+    jsonArray.append(jsonRecipe);
 
     QJsonDocument jsonDoc;
-    jsonDoc.setArray(jsonArray);
+    jsonDoc.setObject(jsonRecipe);
+
 
     file.write(jsonDoc.toJson());
     file.close();
@@ -114,7 +140,7 @@ void mainControler::updateJson(){
 
 
 void mainControler::updateJson2(){ //DEPRECATED
-
+/*
     using json = nlohmann::json;
 
     //add Recipe
@@ -165,12 +191,19 @@ void mainControler::updateJson2(){ //DEPRECATED
 
     ofstream o("recipes2.json");
     o  << setw(1) << k2 << endl;
+    */
 }
+using namespace nlohmann;
+
+// A workaround to give to use fifo_map as map, we are just ignoring the 'less' compare
+template<class K, class V, class dummy_compare, class A>
+using my_workaround_fifo_map = fifo_map<K, V, fifo_map_compare<K>, A>;
+using jsonf = basic_json<my_workaround_fifo_map>;
 
 void mainControler::readJson(){
 
-    using jsonf = nlohmann::json;
 
+    using namespace nlohmann;
 
     ifstream i("recipes.json");
     jsonf j;
@@ -181,6 +214,7 @@ void mainControler::readJson(){
     for (jsonf::iterator it = j.begin(); it != j.end(); ++it) {
 
 
+
         cout <<endl << it.key() << endl << endl;
         Recipe* recRead = new Recipe();
         jsonf a = it.value();
@@ -189,6 +223,7 @@ void mainControler::readJson(){
 
             if (it2.key()=="recipe") {
                 recRead->setDescription(it2.value());
+                cout << "FFFF"<< endl;
 
             }else{
 

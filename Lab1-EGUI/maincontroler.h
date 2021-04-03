@@ -11,15 +11,26 @@ using namespace std;
 
 class mainControler
 {
-public:
+private:
     mainControler();
-    ~mainControler();
+    static mainControler* instance;
+
+
+//    mainControler(mainControler const&);
+//    void operator=(mainControler const&);
+
+public:
+ ~mainControler();
+    static mainControler* getInstance();
+
 
     vector<Recipe*> recipes;
     void readJson();
     void updateJson();
     void updateJson2();
     void printRecipes();
+    void addNewRecipe();
+
 
 };
 

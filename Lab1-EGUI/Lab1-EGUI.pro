@@ -24,7 +24,6 @@ HEADERS += \
     recipe.h
 
 FORMS += \
-    addRecipeWindow.ui \
     addrecwindow.ui \
     mainwindow.ui
 
